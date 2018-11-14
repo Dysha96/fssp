@@ -1,0 +1,12 @@
+{
+    "name": "user/fssp",
+    "authors": [
+        {
+            "name": "Rusanov Andrey",
+            "email": "a.rusanov@robo.finance"
+        }
+    ],
+    "require": {
+        "guzzlehttp/guzzle": "~6.0"
+    }
+}
