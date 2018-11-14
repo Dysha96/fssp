@@ -10,14 +10,18 @@ use GuzzleHttp\Client;
 
 require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 
+$dotenv = new Dotenv\Dotenv(dirname(__DIR__));
+$dotenv->load();
+
 $client = new Client();
 
-
+$token = getenv('TOKEN');
+//echo $token;
 //$response = $client->get(
 //    'https://api-ip.fssprus.ru/api/v1.0/search/physical',
 //    [
 //        'query' => [
-//            'token' => 'judyVpLo0EJV',
+//            'token' => $token,
 //            'region' => '42',
 //            'firstname' => 'Андрей',
 //            'secondname' => 'Павлович',
@@ -34,7 +38,7 @@ $response = $client->get(
     'https://api-ip.fssprus.ru/api/v1.0/status',
     [
         'query' => [
-            'token' => 'judyVpLo0EJV',
+            'token' => $token,
             'task' => '919a6471-59e6-4aba-867e-625fec379f3f',
         ]
     ]
@@ -48,7 +52,7 @@ if ($obj->{'response'}->{'status'} = 0) {
         'https://api-ip.fssprus.ru/api/v1.0/result',
         [
             'query' => [
-                'token' => 'judyVpLo0EJV',
+                'token' => $token,
                 'task' => '919a6471-59e6-4aba-867e-625fec379f3f',
             ]
         ]
