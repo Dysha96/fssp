@@ -16,7 +16,7 @@ $dotenv->load();
 $client = new Client();
 
 $token = getenv('TOKEN');
-//echo $token;
+
 //$response = $client->get(
 //    'https://api-ip.fssprus.ru/api/v1.0/search/physical',
 //    [
@@ -33,13 +33,14 @@ $token = getenv('TOKEN');
 //$obj = json_decode($response);
 //
 //var_dump($obj);
-
+$task='f9097b6c-5b29-47c4-8821-067477fc7504';
+//919a6471-59e6-4aba-867e-625fec379f3f
 $response = $client->get(
     'https://api-ip.fssprus.ru/api/v1.0/status',
     [
         'query' => [
             'token' => $token,
-            'task' => '919a6471-59e6-4aba-867e-625fec379f3f',
+            'task' => $task,
         ]
     ]
 )->getBody();
@@ -47,16 +48,17 @@ $obj = json_decode($response);
 var_dump($obj->{'response'}->{'status'});
 
 
-if ($obj->{'response'}->{'status'} = 0) {
+if ($obj->{'response'}->{'status'} == 0) {
     $response = $client->get(
         'https://api-ip.fssprus.ru/api/v1.0/result',
         [
             'query' => [
                 'token' => $token,
-                'task' => '919a6471-59e6-4aba-867e-625fec379f3f',
+                'task' => $task,
             ]
         ]
     )->getBody();
     $obj = json_decode($response);
+    var_dump($response);
     var_dump($obj);
 }
