@@ -6,6 +6,7 @@
  * Time: 21:19
  */
 $start = microtime(true);
+set_time_limit(0);
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
@@ -169,7 +170,7 @@ $count = 0;
 
 try {
     while ($inCsv->valid() && $count < 3) {
-//    $count++;
+    $count++;
 
         $inArray = $inCsv->fgetcsv();
         $customerId = $inArray[0];
@@ -184,15 +185,18 @@ try {
 
         $task = getSearchPhysicalTask($token, $firstName, $lastName, $birthDate, $region, $secondName);
 
+
         sleep(3);
-        $status = getStatus($token, $task);
+        $results = getResult($token, $task);
+        $status = $results[0]->{'status'};
 
         $attempt = 0;
         while ($status != 0 && $attempt < $maxLimit) {
             $attempt++;
 
             sleep(3);
-            $status = getStatus($token, $task);
+            $results = getResult($token, $task);
+            $status = $results[0]->{'status'};
         }
 
         if ($status != 0) {
@@ -201,8 +205,6 @@ try {
             continue;
         }
 
-        sleep(3);
-        $result = getResult($token, $task);
 
         if (!empty($result)) {
             $outArray[] = json_encode($result);
