@@ -8,6 +8,7 @@
     ],
     "require": {
         "guzzlehttp/guzzle": "~6.0",
-        "vlucas/phpdotenv": "^2.5"
+        "vlucas/phpdotenv": "^2.5",
+        "ext-json": "*"
     }
 }

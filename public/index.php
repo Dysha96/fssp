@@ -38,7 +38,7 @@ function getSearchPhysicalTask($token, $firstName, $lastName, $birthDate = '', $
     return $obj->{'response'}->{'task'};
 }
 
-function getSearchGroupTask($token, $firstName, $lastName, $birthDate = '', $region = -1, $secondName = '')
+function postSearchGroupTask($token, $firstName, $lastName, $birthDate = '', $region = -1, $secondName = '')
 {
     $client = new Client();
     $type = 1;
@@ -152,7 +152,7 @@ $secondName = 'Павлович';
 //var_dump(getSearchPhysicalTask($token, $firstName, $lastName, $birthDate, $region, $secondName));
 $type = 1;
 
-//var_dump(getSearchGroupTask($token, $firstName, $lastName, $birthDate, $region, $secondName));
+//var_dump(postSearchGroupTask($token, $firstName, $lastName, $birthDate, $region, $secondName));
 //var_dump(getStatus($token,'0f352f6d-2252-4c16-8a39-92c343682c6e'));
 //var_dump(getResults($token, '0f352f6d-2252-4c16-8a39-92c343682c6e'));
 
@@ -178,4 +178,26 @@ $type = 1;
 //    var_dump('Есть записись в ФССП');
 //} else {
 //    var_dump('Нет записи в ФССП');
+//}
+
+$inCsv = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_IN'));
+$inCsv->setFlags(SplFileObject::READ_CSV);
+$outCsv = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_OUT'), 'w');
+
+
+//Пропуск первой строки
+$inCsv->seek(1);
+
+//while ($inCsv->valid()) {
+//    $inArray = $inCsv->fgetcsv();
+//    $customerId = $inArray[0];
+//    $region = $inArray[1];
+//    $firstName = $inArray[2];
+//    $middleName = $inArray[3];
+//    $lastName = $inArray[4];
+//    $inBirthDate = explode('-', $inArray[5]);
+//    $outBirthDate = $inBirthDate[2] . '.' . $inBirthDate[1] . '.' . $inBirthDate[0];
+//
+//    $outArray = [$customerId];
+////    $outCsv->fputcsv($outArray);
 //}
