@@ -152,46 +152,19 @@ $lastName = 'Русанов';
 $birthDate = '12.07.1996';
 $region = 42;
 $secondName = 'Павлович';
-//var_dump(getSearchPhysicalTask($token, $firstName, $lastName, $birthDate, $region, $secondName));
+
 $type = 1;
 
-//var_dump(postSearchGroupTask($token, $firstName, $lastName, $birthDate, $region, $secondName));
-//var_dump(getStatus($token,'0f352f6d-2252-4c16-8a39-92c343682c6e'));
-//var_dump(getResults($token, '0f352f6d-2252-4c16-8a39-92c343682c6e'));
-
-//$task = '624e2789-7e38-4041-8eb3-c8f19677cf17';
-//var_dump(getResult($token, 'ff5e97b2-5b0a-4392-a829-32d4d5061891'));
-//if (!empty(getResult($token, $task))) {
-//    var_dump('Есть запись в ФССП');
-//} else {
-//    var_dump('Нет записи в ФССП');
-//}
-//
-//$task = 'd9dfa40b-28a6-4be1-a68b-a191bc4552f3';
-////var_dump(getResult($token,$task));
-//if (!empty(getResult($token, $task))) {
-//    var_dump('Есть запись в ФССП');
-//} else {
-//    var_dump('Нет записи в ФССП');
-//}
-//
-//
-//$task = '496edb2c-02ce-4283-8f91-2690482a78a8';
-//if (!empty(getResult($token, $task))) {
-//    var_dump('Есть записись в ФССП');
-//} else {
-//    var_dump('Нет записи в ФССП');
-//}
 
 $inCsv = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_IN'));
 $inCsv->setFlags(SplFileObject::READ_CSV);
-$outCsv = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_OUT'), 'w');
-$outError = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_ERROR'), 'w');
+$outCsv = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_OUT'), 'a');
+$outError = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_ERROR'), 'a');
 
 
 //Пропуск первой строки
 $inCsv->seek(1);
-$maxLimit = 5;
+$maxLimit = 10;
 $count = 0;
 
 try {
@@ -211,14 +184,14 @@ try {
 
         $task = getSearchPhysicalTask($token, $firstName, $lastName, $birthDate, $region, $secondName);
 
-        sleep(2);
+        sleep(3);
         $status = getStatus($token, $task);
 
         $attempt = 0;
-        while (getStatus($token, $task) != 0 && $attempt < $maxLimit) {
+        while ($status != 0 && $attempt < $maxLimit) {
             $attempt++;
 
-            sleep(2);
+            sleep(3);
             $status = getStatus($token, $task);
         }
 
@@ -228,7 +201,7 @@ try {
             continue;
         }
 
-        sleep(2);
+        sleep(3);
         $result = getResult($token, $task);
 
         if (!empty($result)) {
@@ -240,9 +213,9 @@ try {
         $outCsv->fputcsv($outArray);
     }
 } catch (RequestException $e) {
-    echo Psr7\str($e->getRequest());
+    echo nl2br(Psr7\str($e->getRequest()));
     if ($e->hasResponse()) {
-        echo Psr7\str($e->getResponse());
+        echo nl2br(Psr7\str($e->getResponse()));
     }
 }
 echo 'Время выполнения скрипта: ' . round(microtime(true) - $start, 4) . ' сек.';
