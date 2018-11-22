@@ -141,10 +141,10 @@ $count = 0;
 //        }
 //
 //
-//        if (!empty($result)) {
-//            $outArray[] = json_encode($result);
-//        } else {
+//        if (empty($result)) {
 //            $outArray[] = 'Нет записи в ФССП по региону ' . $region;
+//        } else {
+//            $outArray[] = json_encode($result);
 //        }
 //
 //        $outCsv->fputcsv($outArray);
@@ -208,22 +208,29 @@ try {
         if ($status != 0) {
             foreach ($customers as $key => $customer) {
                 $customerError = $customer['params'];
-                array_unshift($customerError, $outArray [$key][0]);
+                array_unshift($customerError, $outArray[$key][0]);
                 $outError->fputcsv($customerError);
             }
 
             continue;
         }
 
-        $results = $response->{'result'};
-        var_dump($results);
+        $overallResults = $response->{'result'};
 
-        foreach ($results as $key => $result) {
-            var_dump($result);
-            if (!empty($result)) {
-                $outArray[$key][] = json_encode($result);
-            } else {
+        foreach ($overallResults as $key => $result) {
+            $status = $result->{'status'};
+            if ($status != 0) {
+                $customerError = $result->{'query'}{'params'};
+                array_unshift($customerError, $outArray[$key][0]);
+                $outError->fputcsv($customerError);
+                continue;
+            }
+
+            $foundInformation = $result->{'result'};
+            if (empty($foundInformation)) {
                 $outArray[$key][] = 'Нет записи в ФССП по региону ' . $region;
+            } else {
+                array_merge($outArray[$key], $foundInformation);
             }
             $outCsv->fputcsv($outArray[$key]);
         }
