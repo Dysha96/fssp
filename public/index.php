@@ -164,7 +164,7 @@ try {
         $outArray = [];
         $type = 1;
 
-        for ($i = 0; $i < 10 && $inCsv->valid(); $i++) {
+        for ($i = 0; $i < 5 && $inCsv->valid(); $i++) {
             $customerInfo = $inCsv->fgetcsv();
             $customerId = $customerInfo[0];
             $region = $customerInfo[1];
@@ -191,11 +191,10 @@ try {
 
         sleep(5);
         $task = postSearchGroupTask($token, $customers);
-        var_dump($task);
         sleep(5);
         $response = getResults($token, $task);
-        var_dump($response);
         $status = $response['status'];
+        $status = 1;
 
         $attempt = 0;
         while ($status != 0 && $attempt < $maxLimit) {
@@ -221,19 +220,18 @@ try {
         foreach ($overallResults as $key => $result) {
             $status = $result['status'];
             if ($status != 0) {
-                $customerError = $result['query']['params'];
-                array_unshift($customerError, $outArray[$key][0]);
-                $outError->fputcsv($customerError);
+                $outArray[$key][] = serialize($result['query']['params']);
+                $outError->fputcsv($outArray);
                 continue;
             }
 
             $foundInformation = $result['result'];
             if (empty($foundInformation)) {
-                $outArray[$key][] = 'Нет записи в ФССП по параметрам:' . $result['query']['params'];
+                $outArray[$key][] = 'Нет записи в ФССП по параметрам:' . serialize($result['query']['params']);
             } else {
-                $outArray[$key] = array_merge($outArray[$key], $foundInformation);
+                $outArray[$key][] = serialize($result['query']['params']);
+                $outArray[$key][] = serialize($foundInformation);
             }
-            var_dump($outArray);
             $outCsv->fputcsv($outArray[$key]);
         }
 
