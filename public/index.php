@@ -230,7 +230,7 @@ try {
             if (empty($foundInformation)) {
                 $outArray[$key][] = 'Нет записи в ФССП по региону ' . $region;
             } else {
-                array_merge($outArray[$key], $foundInformation);
+                $outArray[$key] = array_merge($outArray[$key], $foundInformation);
             }
             $outCsv->fputcsv($outArray[$key]);
         }
