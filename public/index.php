@@ -37,9 +37,9 @@ function getSearchPhysicalTask($token, $firstName, $lastName, $birthDate = '', $
             ]
         ]
     )->getBody();
-    $obj = json_decode($response);
+    $obj = json_decode($response, true);
 
-    return $obj->{'response'}->{'task'};
+    return $obj['response']['task'];
 }
 
 function postSearchGroupTask($token, $customers)
@@ -55,9 +55,9 @@ function postSearchGroupTask($token, $customers)
             ]
         ]
     )->getBody();
-    $obj = json_decode($response);
+    $obj = json_decode($response, true);
 
-    return $obj->{'response'}->{'task'};
+    return $obj['response']['task'];
 }
 
 function getStatus($token, $task)
@@ -72,9 +72,9 @@ function getStatus($token, $task)
             ]
         ]
     )->getBody();
-    $obj = json_decode($response);
+    $obj = json_decode($response, true);
     var_dump($obj);
-    return $obj->{'response'}->{'status'};
+    return $obj['response']['status'];
 }
 
 function getResults($token, $task)
@@ -89,8 +89,8 @@ function getResults($token, $task)
             ]
         ]
     )->getBody();
-    $obj = json_decode($response);
-    return $obj->{'response'};
+    $obj = json_decode($response, true);
+    return $obj['response'];
 }
 
 $inCsv = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_IN'));
@@ -122,16 +122,16 @@ $count = 0;
 //
 //
 //        sleep(3);
-//        $results = getResults($token, $task)->{'result'};
-//        $status = $results[0]->{'status'};
+//        $results = getResults($token, $task)['result'];
+//        $status = $results[0]['status'];
 //
 //        $attempt = 0;
 //        while ($status != 0 && $attempt < $maxLimit) {
 //            $attempt++;
 //
 //            sleep(3);
-//            $results = getResults($token, $task)->{'result'};
-//            $status = $results[0]->{'status'};
+//            $results = getResults($token, $task)['result'];
+//            $status = $results[0]['status'];
 //        }
 //
 //        if ($status != 0) {
@@ -191,10 +191,11 @@ try {
 
         sleep(5);
         $task = postSearchGroupTask($token, $customers);
-
+        var_dump($task);
         sleep(5);
         $response = getResults($token, $task);
-        $status = $response->{'status'};
+        var_dump($response);
+        $status = $response['status'];
 
         $attempt = 0;
         while ($status != 0 && $attempt < $maxLimit) {
@@ -202,7 +203,7 @@ try {
 
             sleep(5);
             $response = getResults($token, $task);
-            $status = $response->{'status'};
+            $status = $response['status'];
         }
 
         if ($status != 0) {
@@ -215,23 +216,24 @@ try {
             continue;
         }
 
-        $overallResults = $response->{'result'};
+        $overallResults = $response['result'];
 
         foreach ($overallResults as $key => $result) {
-            $status = $result->{'status'};
+            $status = $result['status'];
             if ($status != 0) {
-                $customerError = $result->{'query'}{'params'};
+                $customerError = $result['query']['params'];
                 array_unshift($customerError, $outArray[$key][0]);
                 $outError->fputcsv($customerError);
                 continue;
             }
 
-            $foundInformation = $result->{'result'};
+            $foundInformation = $result['result'];
             if (empty($foundInformation)) {
-                $outArray[$key][] = 'Нет записи в ФССП по региону ' . $region;
+                $outArray[$key][] = 'Нет записи в ФССП по параметрам:' . $result['query']['params'];
             } else {
                 $outArray[$key] = array_merge($outArray[$key], $foundInformation);
             }
+            var_dump($outArray);
             $outCsv->fputcsv($outArray[$key]);
         }
 
