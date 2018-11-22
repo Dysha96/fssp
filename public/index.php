@@ -42,37 +42,16 @@ function getSearchPhysicalTask($token, $firstName, $lastName, $birthDate = '', $
     return $obj->{'response'}->{'task'};
 }
 
-function postSearchGroupTask($token, $firstName, $lastName, $birthDate = '', $region = -1, $secondName = '')
+function postSearchGroupTask($token, $customers)
 {
     $client = new Client();
-    $type = 1;
+
     $response = $client->post(
         'https://api-ip.fssprus.ru/api/v1.0/search/group',
         [
             GuzzleHttp\RequestOptions::QUERY => [
                 'token' => $token,
-                'request' => [
-                    [
-                        'type' => $type,
-                        'params' => [
-                            'region' => $region,
-                            'firstname' => $firstName,
-                            'secondname' => $secondName,
-                            'lastname' => $lastName,
-                            'birthdate' => $birthDate,
-                        ]
-                    ],
-                    [
-                        'type' => $type,
-                        'params' => [
-                            'region' => $region,
-                            'firstname' => $firstName,
-                            'secondname' => $secondName,
-                            'lastname' => $lastName,
-                            'birthdate' => $birthDate,
-                        ]
-                    ],
-                ]
+                'request' => $customers
             ]
         ]
     )->getBody();
@@ -94,40 +73,8 @@ function getStatus($token, $task)
         ]
     )->getBody();
     $obj = json_decode($response);
+    var_dump($obj);
     return $obj->{'response'}->{'status'};
-}
-
-function getProgress($token, $task)
-{
-    $client = new Client();
-    $response = $client->get(
-        'https://api-ip.fssprus.ru/api/v1.0/status',
-        [
-            GuzzleHttp\RequestOptions::QUERY => [
-                'token' => $token,
-                'task' => $task,
-            ]
-        ]
-    )->getBody();
-    $obj = json_decode($response);
-    return $obj->{'response'}->{'progress'};
-}
-
-function getResult($token, $task)
-{
-    $client = new Client();
-    $response = $client->get(
-        'https://api-ip.fssprus.ru/api/v1.0/result',
-        [
-            GuzzleHttp\RequestOptions::QUERY => [
-                'token' => $token,
-                'task' => $task,
-            ]
-        ]
-    )->getBody();
-    $obj = json_decode($response);
-
-    return $obj->{'response'}->{'result'}[0]->{'result'};
 }
 
 function getResults($token, $task)
@@ -143,76 +90,144 @@ function getResults($token, $task)
         ]
     )->getBody();
     $obj = json_decode($response);
-
-    return $obj->{'response'}->{'result'};
+    return $obj->{'response'};
 }
-
-
-$firstName = 'Андрей';
-$lastName = 'Русанов';
-$birthDate = '12.07.1996';
-$region = 42;
-$secondName = 'Павлович';
-
-$type = 1;
-
 
 $inCsv = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_IN'));
 $inCsv->setFlags(SplFileObject::READ_CSV);
 $outCsv = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_OUT'), 'a');
 $outError = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_ERROR'), 'a');
 
-
 //Пропуск первой строки
-$inCsv->seek(1);
 $maxLimit = 10;
 $count = 0;
 
+///обработка через get запросы, больше 100 обработать проблематично, выходи 429
+//try {
+//    while ($inCsv->valid() && $count < -1) {
+//        $count++;
+//
+//        $inArray = $inCsv->fgetcsv();
+//        $customerId = $inArray[0];
+//        $region = $inArray[1];
+//        $firstName = $inArray[2];
+//        $middleName = $inArray[3];
+//        $lastName = $inArray[4];
+//        $inBirthDate = explode('-', $inArray[5]);
+//        $outBirthDate = $inBirthDate[2] . '.' . $inBirthDate[1] . '.' . $inBirthDate[0];
+//
+//        $outArray = ['https://www.zaymer.ru/operator/client_info/' . $customerId];
+//
+//        $task = getSearchPhysicalTask($token, $firstName, $lastName, $outBirthDate, $region, $secondName);
+//
+//
+//        sleep(3);
+//        $results = getResults($token, $task)->{'result'};
+//        $status = $results[0]->{'status'};
+//
+//        $attempt = 0;
+//        while ($status != 0 && $attempt < $maxLimit) {
+//            $attempt++;
+//
+//            sleep(3);
+//            $results = getResults($token, $task)->{'result'};
+//            $status = $results[0]->{'status'};
+//        }
+//
+//        if ($status != 0) {
+//            echo 'https://www.zaymer.ru/operator/client_info/' . $customerId . ' Был пропушен';
+//            $outError->fputcsv($inArray);
+//            continue;
+//        }
+//
+//
+//        if (!empty($result)) {
+//            $outArray[] = json_encode($result);
+//        } else {
+//            $outArray[] = 'Нет записи в ФССП по региону ' . $region;
+//        }
+//
+//        $outCsv->fputcsv($outArray);
+//    }
+//} catch (RequestException $e) {
+//    echo nl2br(Psr7\str($e->getRequest()));
+//    if ($e->hasResponse()) {
+//        echo nl2br(Psr7\str($e->getResponse()));
+//    }
+//}
+
 try {
-    while ($inCsv->valid() && $count < 3) {
-    $count++;
+    while ($inCsv->valid() && $count < 1) {
+        $count++;
 
-        $inArray = $inCsv->fgetcsv();
-        $customerId = $inArray[0];
-        $region = $inArray[1];
-        $firstName = $inArray[2];
-        $middleName = $inArray[3];
-        $lastName = $inArray[4];
-        $inBirthDate = explode('-', $inArray[5]);
-        $outBirthDate = $inBirthDate[2] . '.' . $inBirthDate[1] . '.' . $inBirthDate[0];
+        $customers = [];
+        $outArray = [];
+        $type = 1;
 
-        $outArray = ['https://www.zaymer.ru/operator/client_info/' . $customerId];
+        for ($i = 0; $i < 10 && $inCsv->valid(); $i++) {
+            $customerInfo = $inCsv->fgetcsv();
+            $customerId = $customerInfo[0];
+            $region = $customerInfo[1];
+            $firstName = $customerInfo[2];
+            $secondName = $customerInfo[3];
+            $lastName = $customerInfo[4];
+            $inBirthDate = explode('-', $customerInfo[5]);
+            $outBirthDate = $inBirthDate[2] . '.' . $inBirthDate[1] . '.' . $inBirthDate[0];
 
-        $task = getSearchPhysicalTask($token, $firstName, $lastName, $birthDate, $region, $secondName);
+            $customer = [
+                'type' => $type,
+                'params' => [
+                    'region' => $region,
+                    'firstname' => $firstName,
+                    'secondname' => $secondName,
+                    'lastname' => $lastName,
+                    'birthdate' => $outBirthDate,
+                ]
+            ];
 
+            $customers[$i] = $customer;
+            $outArray [$i][] = $customerId;
+        }
 
-        sleep(3);
-        $results = getResult($token, $task);
-        $status = $results[0]->{'status'};
+        sleep(5);
+        $task = postSearchGroupTask($token, $customers);
+
+        sleep(5);
+        $response = getResults($token, $task);
+        $status = $response->{'status'};
 
         $attempt = 0;
         while ($status != 0 && $attempt < $maxLimit) {
             $attempt++;
 
-            sleep(3);
-            $results = getResult($token, $task);
-            $status = $results[0]->{'status'};
+            sleep(5);
+            $response = getResults($token, $task);
+            $status = $response->{'status'};
         }
 
         if ($status != 0) {
-            echo 'https://www.zaymer.ru/operator/client_info/' . $customerId . ' Был пропушен';
-            $outError->fputcsv($inArray);
+            foreach ($customers as $key => $customer) {
+                $customerError = $customer['params'];
+                array_unshift($customerError, $outArray [$key][0]);
+                $outError->fputcsv($customerError);
+            }
+
             continue;
         }
 
+        $results = $response->{'result'};
+        var_dump($results);
 
-        if (!empty($result)) {
-            $outArray[] = json_encode($result);
-        } else {
-            $outArray[] = 'Нет записи в ФССП по региону ' . $region;
+        foreach ($results as $key => $result) {
+            var_dump($result);
+            if (!empty($result)) {
+                $outArray[$key][] = json_encode($result);
+            } else {
+                $outArray[$key][] = 'Нет записи в ФССП по региону ' . $region;
+            }
+            $outCsv->fputcsv($outArray[$key]);
         }
 
-        $outCsv->fputcsv($outArray);
     }
 } catch (RequestException $e) {
     echo nl2br(Psr7\str($e->getRequest()));
@@ -220,4 +235,5 @@ try {
         echo nl2br(Psr7\str($e->getResponse()));
     }
 }
+
 echo 'Время выполнения скрипта: ' . round(microtime(true) - $start, 4) . ' сек.';
