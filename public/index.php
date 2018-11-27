@@ -73,7 +73,7 @@ function getStatus($token, $task)
         ]
     )->getBody();
     $obj = json_decode($response, true);
-    var_dump($obj);
+
     return $obj['response']['status'];
 }
 
@@ -99,7 +99,7 @@ $outCsv = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FIL
 $outError = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_ERROR'), 'a');
 
 //Пропуск первой строки
-$maxLimit = 15;
+$maxLimit = 500;
 $count = 0;
 
 ///обработка через get запросы, больше 100 обработать проблематично, выходи 429
@@ -164,7 +164,7 @@ try {
         $outArray = [];
         $type = 1;
 
-        for ($i = 0; $i < 65 && $inCsv->valid(); $i++) {
+        for ($i = 0; $i < 50 && $inCsv->valid(); $i++) {
             $customerInfo = $inCsv->fgetcsv();
             $customerId = $customerInfo[0];
             $region = $customerInfo[1];
@@ -189,19 +189,27 @@ try {
             $outArray [$i][] = $customerId;
         }
 
-        sleep(5);
+        sleep(3);
         $task = postSearchGroupTask($token, $customers);
-        sleep(5);
+        sleep(3);
         $response = getResults($token, $task);
         $status = $response['status'];
-        $status = 1;
 
         $attempt = 0;
         while ($status != 0 && $attempt < $maxLimit) {
-
+            var_dump('$attempt' . $attempt);
             sleep($attempt + 5);
-            $response = getResults($token, $task);
+            try {
+                $response = getResults($token, $task);
+            } catch (RequestException $e) {
+                $outError->fputcsv([$task]);
+                echo nl2br(Psr7\str($e->getRequest()));
+                if ($e->hasResponse()) {
+                    echo nl2br(Psr7\str($e->getResponse()));
+                }
+            }
             $status = $response['status'];
+            $outError->fputcsv([$task]);
             $attempt++;
         }
 
@@ -211,8 +219,8 @@ try {
                 array_unshift($customerError, $outArray[$key][0]);
                 $outError->fputcsv($customerError);
             }
-
-            continue;
+            $outError->fputcsv([$task]);
+            exit(429);
         }
 
         $overallResults = $response['result'];
@@ -246,5 +254,42 @@ try {
         echo nl2br(Psr7\str($e->getResponse()));
     }
 }
+
+//если упадёт, запускаю это с последним токеном
+//for ($i = 0; $i < 50 && $inCsv->valid(); $i++) {
+//    $customerInfo = $inCsv->fgetcsv();
+//    $customerId = $customerInfo[0];
+//
+//    $outArray [$i][] = $customerId;
+//}
+//$task ='';
+//$response = getResults($token, $task);
+//var_dump($response);
+//
+//$overallResults = $response['result'];
+//
+//foreach ($overallResults as $key => $result) {
+//    $iteratorParams = new RecursiveIteratorIterator(new RecursiveArrayIterator($result['query']['params']));
+//
+//    $status = $result['status'];
+//    if ($status != 0) {
+//        $outArray[$key] = array_merge($outArray[$key], iterator_to_array($iteratorParams, false));
+//        $outError->fputcsv($outArray);
+//        continue;
+//    }
+//
+//    $foundInformation = $result['result'];
+//    var_dump($foundInformation);
+//
+//    $outArray[$key] = array_merge($outArray[$key], iterator_to_array($iteratorParams, false));
+//    if (empty($foundInformation)) {
+//        $outArray[$key][] = 'Нет записи в ФССП по данным параметрам';
+//    } else {
+//        $iteratorParams = new RecursiveIteratorIterator(new RecursiveArrayIterator($result['query']['params']));
+//        $iteratorFoundInformation = new RecursiveIteratorIterator(new RecursiveArrayIterator($foundInformation));
+//        $outArray[$key] = array_merge($outArray[$key], iterator_to_array($iteratorFoundInformation, false));
+//    }
+//    $outCsv->fputcsv($outArray[$key]);
+//}
 
 echo 'Время выполнения скрипта: ' . round(microtime(true) - $start, 4) . ' сек.';
