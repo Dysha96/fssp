@@ -8,7 +8,7 @@
 $start = microtime(true);
 set_time_limit(0);
 
-use GuzzleHttp\Client;
+//use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7;
 
@@ -20,78 +20,78 @@ $dotenv->load();
 
 $token = getenv('TOKEN');
 
-function getSearchPhysicalTask($token, $firstName, $lastName, $birthDate = '', $region = -1, $secondName = '')
-{
-    $client = new Client();
-
-    $response = $client->get(
-        'https://api-ip.fssprus.ru/api/v1.0/search/physical',
-        [
-            GuzzleHttp\RequestOptions::QUERY => [
-                'token' => $token,
-                'region' => $region,
-                'firstname' => $firstName,
-                'secondname' => $secondName,
-                'lastname' => $lastName,
-                'birthdate' => $birthDate,
-            ]
-        ]
-    )->getBody();
-    $obj = json_decode($response, true);
-
-    return $obj['response']['task'];
-}
-
-function postSearchGroupTask($token, $customers)
-{
-    $client = new Client();
-
-    $response = $client->post(
-        'https://api-ip.fssprus.ru/api/v1.0/search/group',
-        [
-            GuzzleHttp\RequestOptions::JSON => [
-                'token' => $token,
-                'request' => $customers
-            ]
-        ]
-    )->getBody();
-    $obj = json_decode($response, true);
-
-    return $obj['response']['task'];
-}
-
-function getStatus($token, $task)
-{
-    $client = new Client();
-    $response = $client->get(
-        'https://api-ip.fssprus.ru/api/v1.0/status',
-        [
-            GuzzleHttp\RequestOptions::QUERY => [
-                'token' => $token,
-                'task' => $task,
-            ]
-        ]
-    )->getBody();
-    $obj = json_decode($response, true);
-
-    return $obj['response']['status'];
-}
-
-function getResults($token, $task)
-{
-    $client = new Client();
-    $response = $client->get(
-        'https://api-ip.fssprus.ru/api/v1.0/result',
-        [
-            'query' => [
-                'token' => $token,
-                'task' => $task,
-            ]
-        ]
-    )->getBody();
-    $obj = json_decode($response, true);
-    return $obj['response'];
-}
+//function getSearchPhysicalTask($token, $firstName, $lastName, $birthDate = '', $region = -1, $secondName = '')
+//{
+//    $client = new Client();
+//
+//    $response = $client->get(
+//        'https://api-ip.fssprus.ru/api/v1.0/search/physical',
+//        [
+//            GuzzleHttp\RequestOptions::QUERY => [
+//                'token' => $token,
+//                'region' => $region,
+//                'firstname' => $firstName,
+//                'secondname' => $secondName,
+//                'lastname' => $lastName,
+//                'birthdate' => $birthDate,
+//            ]
+//        ]
+//    )->getBody();
+//    $obj = json_decode($response, true);
+//
+//    return $obj['response']['task'];
+//}
+//
+//function postSearchGroupTask($token, $customers)
+//{
+//    $client = new Client();
+//
+//    $response = $client->post(
+//        'https://api-ip.fssprus.ru/api/v1.0/search/group',
+//        [
+//            GuzzleHttp\RequestOptions::JSON => [
+//                'token' => $token,
+//                'request' => $customers
+//            ]
+//        ]
+//    )->getBody();
+//    $obj = json_decode($response, true);
+//
+//    return $obj['response']['task'];
+//}
+//
+//function getStatus($token, $task)
+//{
+//    $client = new Client();
+//    $response = $client->get(
+//        'https://api-ip.fssprus.ru/api/v1.0/status',
+//        [
+//            GuzzleHttp\RequestOptions::QUERY => [
+//                'token' => $token,
+//                'task' => $task,
+//            ]
+//        ]
+//    )->getBody();
+//    $obj = json_decode($response, true);
+//
+//    return $obj['response']['status'];
+//}
+//
+//function getResults($token, $task)
+//{
+//    $client = new Client();
+//    $response = $client->get(
+//        'https://api-ip.fssprus.ru/api/v1.0/result',
+//        [
+//            'query' => [
+//                'token' => $token,
+//                'task' => $task,
+//            ]
+//        ]
+//    )->getBody();
+//    $obj = json_decode($response, true);
+//    return $obj['response'];
+//}
 
 $inCsv = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_IN'));
 $inCsv->setFlags(SplFileObject::READ_CSV);
@@ -100,7 +100,7 @@ $outError = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('F
 
 //Пропуск первой строки
 $maxLimit = 500;
-$count = 0;
+//$count = 0;
 
 ///обработка через get запросы, больше 100 обработать проблематично, выходи 429
 //try {
@@ -156,104 +156,103 @@ $count = 0;
 //    }
 //}
 
-try {
-    while ($inCsv->valid() && $count < 1) {
-//        $count++;
-
-        $customers = [];
-        $outArray = [];
-        $type = 1;
-
-        for ($i = 0; $i < 50 && $inCsv->valid(); $i++) {
-            $customerInfo = $inCsv->fgetcsv();
-            $customerId = $customerInfo[0];
-            $region = $customerInfo[1];
-            $firstName = $customerInfo[2];
-            $secondName = $customerInfo[3];
-            $lastName = $customerInfo[4];
-            $inBirthDate = explode('-', $customerInfo[5]);
-            $outBirthDate = $inBirthDate[2] . '.' . $inBirthDate[1] . '.' . $inBirthDate[0];
-
-            $customer = [
-                'type' => $type,
-                'params' => [
-                    'region' => $region,
-                    'firstname' => $firstName,
-                    'secondname' => $secondName,
-                    'lastname' => $lastName,
-                    'birthdate' => $outBirthDate,
-                ]
-            ];
-
-            $customers[$i] = $customer;
-            $outArray [$i][] = $customerId;
-        }
-
-        sleep(3);
-        $task = postSearchGroupTask($token, $customers);
-        sleep(3);
-        $response = getResults($token, $task);
-        $status = $response['status'];
-
-        $attempt = 0;
-        while ($status != 0 && $attempt < $maxLimit) {
-            var_dump('$attempt' . $attempt);
-            sleep($attempt + 5);
-            try {
-                $response = getResults($token, $task);
-            } catch (RequestException $e) {
-                $outError->fputcsv([$task]);
-                echo nl2br(Psr7\str($e->getRequest()));
-                if ($e->hasResponse()) {
-                    echo nl2br(Psr7\str($e->getResponse()));
-                }
-            }
-            $status = $response['status'];
-            $outError->fputcsv([$task]);
-            $attempt++;
-        }
-
-        if ($status != 0) {
-            foreach ($customers as $key => $customer) {
-                $customerError = $customer['params'];
-                array_unshift($customerError, $outArray[$key][0]);
-                $outError->fputcsv($customerError);
-            }
-            $outError->fputcsv([$task]);
-            exit(429);
-        }
-
-        $overallResults = $response['result'];
-
-        foreach ($overallResults as $key => $result) {
-            $iteratorParams = new RecursiveIteratorIterator(new RecursiveArrayIterator($result['query']['params']));
-
-            $status = $result['status'];
-            if ($status != 0) {
-                $outArray[$key] = array_merge($outArray[$key], iterator_to_array($iteratorParams, false));
-                $outError->fputcsv($outArray);
-                continue;
-            }
-
-            $foundInformation = $result['result'];
-            $outArray[$key] = array_merge($outArray[$key], iterator_to_array($iteratorParams, false));
-            if (empty($foundInformation)) {
-                $outArray[$key][] = 'Нет записи в ФССП по данным параметрам';
-            } else {
-                $iteratorParams = new RecursiveIteratorIterator(new RecursiveArrayIterator($result['query']['params']));
-                $iteratorFoundInformation = new RecursiveIteratorIterator(new RecursiveArrayIterator($foundInformation));
-                $outArray[$key] = array_merge($outArray[$key], iterator_to_array($iteratorFoundInformation, false));
-            }
-            $outCsv->fputcsv($outArray[$key]);
-        }
-
-    }
-} catch (RequestException $e) {
-    echo nl2br(Psr7\str($e->getRequest()));
-    if ($e->hasResponse()) {
-        echo nl2br(Psr7\str($e->getResponse()));
-    }
-}
+//try {
+//    while ($inCsv->valid() && $count < 1) {
+////        $count++;
+//
+//        $customers = [];
+//        $outArray = [];
+//        $type = 1;
+//
+//        for ($i = 0; $i < 50 && $inCsv->valid(); $i++) {
+//            $customerInfo = $inCsv->fgetcsv();
+//            $customerId = $customerInfo[0];
+//            $region = $customerInfo[1];
+//            $firstName = $customerInfo[2];
+//            $secondName = $customerInfo[3];
+//            $lastName = $customerInfo[4];
+//            $inBirthDate = explode('-', $customerInfo[5]);
+//            $outBirthDate = $inBirthDate[2] . '.' . $inBirthDate[1] . '.' . $inBirthDate[0];
+//
+//            $customer = [
+//                'type' => $type,
+//                'params' => [
+//                    'region' => $region,
+//                    'firstname' => $firstName,
+//                    'secondname' => $secondName,
+//                    'lastname' => $lastName,
+//                    'birthdate' => $outBirthDate,
+//                ]
+//            ];
+//
+//            $customers[$i] = $customer;
+//            $outArray [$i][] = $customerId;
+//        }
+//
+//        sleep(3);
+//        $task = postSearchGroupTask($token, $customers);
+//        sleep(3);
+//        $response = getResults($token, $task);
+//        $status = $response['status'];
+//
+//        $attempt = 0;
+//        while ($status != 0 && $attempt < $maxLimit) {
+//            var_dump('$attempt' . $attempt);
+//            sleep($attempt + 5);
+//            try {
+//                $response = getResults($token, $task);
+//            } catch (RequestException $e) {
+//                echo nl2br(Psr7\str($e->getRequest()));
+//                if ($e->hasResponse()) {
+//                    echo nl2br(Psr7\str($e->getResponse()));
+//                }
+//            }
+//            $status = $response['status'];
+//            $outError->fputcsv([$task]);
+//            $attempt++;
+//        }
+//
+//        if ($status != 0) {
+//            foreach ($customers as $key => $customer) {
+//                $customerError = $customer['params'];
+//                array_unshift($customerError, $outArray[$key][0]);
+//                $outError->fputcsv($customerError);
+//            }
+//            $outError->fputcsv([$task]);
+//            exit(429);
+//        }
+//
+//        $overallResults = $response['result'];
+//
+//        foreach ($overallResults as $key => $result) {
+//            $iteratorParams = new RecursiveIteratorIterator(new RecursiveArrayIterator($result['query']['params']));
+//
+//            $status = $result['status'];
+//            if ($status != 0) {
+//                $outArray[$key] = array_merge($outArray[$key], iterator_to_array($iteratorParams, false));
+//                $outError->fputcsv($outArray);
+//                continue;
+//            }
+//
+//            $foundInformation = $result['result'];
+//            $outArray[$key] = array_merge($outArray[$key], iterator_to_array($iteratorParams, false));
+//            if (empty($foundInformation)) {
+//                $outArray[$key][] = 'Нет записи в ФССП по данным параметрам';
+//            } else {
+//                $iteratorParams = new RecursiveIteratorIterator(new RecursiveArrayIterator($result['query']['params']));
+//                $iteratorFoundInformation = new RecursiveIteratorIterator(new RecursiveArrayIterator($foundInformation));
+//                $outArray[$key] = array_merge($outArray[$key], iterator_to_array($iteratorFoundInformation, false));
+//            }
+//            $outCsv->fputcsv($outArray[$key]);
+//        }
+//
+//    }
+//} catch (RequestException $e) {
+//    echo nl2br(Psr7\str($e->getRequest()));
+//    if ($e->hasResponse()) {
+//        echo nl2br(Psr7\str($e->getResponse()));
+//    }
+//}
 
 //если упадёт, запускаю это с последним токеном
 //for ($i = 0; $i < 50 && $inCsv->valid(); $i++) {
@@ -292,4 +291,126 @@ try {
 //    $outCsv->fputcsv($outArray[$key]);
 //}
 
+$limitSearchGroup = 50;
+$requestToFssp = new services\requestToFssp($token);
+
+while ($inCsv->valid()) {
+
+    $customers = [];
+    $customersId = [];
+    $type = 1;
+
+    for ($i = 0; $i < $limitSearchGroup && $inCsv->valid(); $i++) {
+        $customerInfo = $inCsv->fgetcsv();
+        $customerId = $customerInfo[0];
+        $region = $customerInfo[1];
+        $firstName = $customerInfo[2];
+        $secondName = $customerInfo[3];
+        $lastName = $customerInfo[4];
+        $inBirthDate = explode('-', $customerInfo[5]);
+        $outBirthDate = $inBirthDate[2] . '.' . $inBirthDate[1] . '.' . $inBirthDate[0];
+
+        $customer = [
+            'type' => $type,
+            'params' => [
+                'region' => $region,
+                'firstname' => $firstName,
+                'secondname' => $secondName,
+                'lastname' => $lastName,
+                'birthdate' => $outBirthDate,
+            ]
+        ];
+
+        $customers[$i] = $customer;
+        $customersId [$i] = $customerId;
+    }
+
+
+    try {
+        $status = $requestToFssp->PostSearchGroupTask($customers);
+    } catch (RequestException $e) {
+        $status = -1;
+        echo nl2br(Psr7\str($e->getRequest())); //log
+        if ($e->hasResponse()) {
+            echo nl2br(Psr7\str($e->getResponse())); //log
+        }
+    }
+
+    while ($status != 0) {
+        try {
+            $status = $requestToFssp->PostSearchGroupTask($customers);
+        } catch (RequestException $e) {
+            echo nl2br(Psr7\str($e->getRequest())); //log
+            if ($e->hasResponse()) {
+                echo nl2br(Psr7\str($e->getResponse())); //log
+            }
+        }
+    }
+
+    try {
+        $status = $requestToFssp->requestToGetResults();
+    } catch (RequestException $e) {
+        $status = -1;
+        echo nl2br(Psr7\str($e->getRequest())); //log
+        if ($e->hasResponse()) {
+            echo nl2br(Psr7\str($e->getResponse())); //log
+        }
+    }
+
+    while ($status != 0 || $status == -1) {
+        try {
+            $status = $requestToFssp->requestToGetResults();
+        } catch (RequestException $e) {
+            $status = -1;
+            echo nl2br(Psr7\str($e->getRequest())); //log
+            if ($e->hasResponse()) {
+                echo nl2br(Psr7\str($e->getResponse())); //log
+            }
+        }
+    }
+
+    if ($status == -1) {
+        //log
+        foreach ($customers as $key => $customer) {
+            $customerError = $customer['params'];
+            array_unshift($customerError, $customersId[$key]);
+            $outError->fputcsv($customerError);
+        }
+        exit(429);
+    }
+
+    foreach ($customersId as $key => $customerId) {
+        $result = $requestToFssp->getResultById($key);
+        $params = $requestToFssp->getParamsById($key);
+
+        $iteratorParams = new RecursiveIteratorIterator(new RecursiveArrayIterator($params));
+        $outArray[$key] = iterator_to_array($iteratorParams, false);
+        $outArray[$key] = array_unshift($outArray[$key], $customerId);
+
+        $status = $result['status'];
+
+        if ($status != 0) {
+            //log
+            $outError->fputcsv($outArray[$key]);
+            continue;
+        }
+
+        $foundInformation = $result['result'];
+
+        if (empty($foundInformation)) {
+            $outArray[$key][] = 'Нет записи в ФССП по данным параметрам';
+            $outCsv->fputcsv($outArray[$key]);
+            continue;
+        }
+
+        foreach ($foundInformation as $information) {
+            $iteratorInformation = new RecursiveArrayIterator($information);
+            $outArray[$key] = iterator_to_array($iteratorInformation, false);
+            $outArray[$key] = array_unshift($outArray[$key], $customerId);
+
+            $outCsv->fputcsv($outArray[$key]);
+        }
+    }
+
+}
 echo 'Время выполнения скрипта: ' . round(microtime(true) - $start, 4) . ' сек.';
