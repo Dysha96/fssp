@@ -116,7 +116,7 @@ class requestToFssp
     //Получение результатов поданного запроса, возврощает код ответа
     function requestToGetResults()
     {
-        if ($this->attempt = $this->maxAttempt) {
+        if ($this->attempt == $this->maxAttempt) {
             return -1;
         }
 
@@ -137,9 +137,12 @@ class requestToFssp
 
         $responseArray = json_decode($response, true);
 
-        if ($responseArray['response']['status'] = 0) {
+        if ($responseArray['response']['status'] == 0) {
             $this->attempt = 0;
             $this->responses = $responseArray['response'];
+            $this->log->debug("Результат готов и получен", [$this->task]);
+        } else {
+            $this->log->debug($responseArray['response']['progress'], [$this->task]);
         }
 
         return $responseArray['response']['status'];
@@ -159,8 +162,7 @@ class requestToFssp
         if (empty($this->responses)) {
             return null;
         }
-
-        return $this->responses['result'][$id];
+        return $this->responses['result'][$id]['query']['params'];
     }
 
     function setTask($task)
