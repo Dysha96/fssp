@@ -9,6 +9,13 @@
     "require": {
         "guzzlehttp/guzzle": "~6.0",
         "vlucas/phpdotenv": "^2.5",
-        "ext-json": "*"
+        "ext-json": "*",
+        "monolog/monolog": "^1.24"
+    },
+    "autoload": {
+        "psr-4": {
+            "services\\": "services/"
+        },
+        "files": ["services/requestToFssp.php"]
     }
 }
