@@ -11,9 +11,12 @@ namespace services;
 
 use GuzzleHttp\Client;
 use GuzzleHttp;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 
 class requestToFssp
 {
+    private $log;
     private $token;
     private $task;
     private $responses;
@@ -23,8 +26,19 @@ class requestToFssp
 
     public function __construct($token)
     {
+        $dirName = dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('LOG');
+
+        $this->log = new Logger('requestToFssp');
+        try {
+            $this->log->pushHandler(new StreamHandler($dirName, Logger::DEBUG));
+        } catch (\Exception $e) {
+            exit(-1);
+        }
+
         $this->token = $token;
-        $this->client = new Client();;
+        $this->client = new Client();
+
+        $this->log->debug('class initialization');
     }
 
     //делает групповой запрос на поиск информации в БДИП, возврощает код ответа
@@ -49,13 +63,13 @@ class requestToFssp
             $this->task = $responseArray['response']['task'];
         }
         return $responseArray['code'];
-
     }
 
     //делает запрос на поиск сведений о физическом лице, возврощает код ответа
     function requestToGetSearchPhysicalTask($firstName, $lastName, $birthDate = '', $region = -1, $secondName = '')
     {
         $this->task = null;
+        $this->attempt = 0;
 
         sleep(3);
         $response = $this->client->get(
@@ -76,7 +90,7 @@ class requestToFssp
 
         if ($responseArray['code'] == 0) {
             $this->task = $responseArray['response']['task'];
-            //log
+            $this->log->debug("Успешно отправил запрос и получил task {$this->task}");
         }
         return $responseArray['code'];
     }
@@ -106,7 +120,8 @@ class requestToFssp
             return -1;
         }
 
-        //log
+        $this->log->debug("Попытка получения результатов номер {$this->attempt}", [$this->task]);
+
         sleep(3 + $this->attempt);
         $this->attempt++;
 
