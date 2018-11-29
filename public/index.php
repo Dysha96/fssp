@@ -40,7 +40,7 @@ $log->debug('Старт программы');
 
 $requestToFssp = new services\requestToFssp($token);
 $count = 0;
-while ($inCsv->valid() && $count < 1) {
+while ($inCsv->valid()) {
     $count++;
 
     $customers = [];

@@ -141,8 +141,6 @@ class requestToFssp
             $this->attempt = 0;
             $this->responses = $responseArray['response'];
             $this->log->debug("Результат готов и получен", [$this->task]);
-        } else {
-            $this->log->debug($responseArray['response']['progress'], [$this->task]);
         }
 
         return $responseArray['response']['status'];
