@@ -77,7 +77,6 @@ while ($inCsv->valid()) {
 
     try {
         $status = $requestToFssp->PostSearchGroupTask($customers);
-        $log->debug("Проход номер {$count}, успешно отправил групповой запрос");
     } catch (RequestException $e) {
         $log->warning("Проход номер {$count}, ошибка при отправке групового запроса");
         $status = -1;
@@ -90,7 +89,6 @@ while ($inCsv->valid()) {
     while ($status != 0) {
         try {
             $status = $requestToFssp->PostSearchGroupTask($customers);
-            $log->debug("Проход номер {$count}, смог успешно отправить групповой запрос");
         } catch (RequestException $e) {
             $log->warning("Проход номер {$count}, снова ошибка при отправке групового запроса");
             $log->warning(nl2br(Psr7\str($e->getRequest())));
