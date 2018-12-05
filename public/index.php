@@ -25,7 +25,6 @@ $inCsv->setFlags(SplFileObject::READ_CSV);
 $outCsv = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_OUT'), 'a');
 $outError = new SplFileObject(dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('FILE_ERROR'), 'a');
 
-$maxLimit = 500;
 $limitSearchGroup = 50;
 
 $dirName = dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('LOG');
@@ -113,7 +112,7 @@ while ($inCsv->valid()) {
         }
     }
 
-    while ($status != 0 || $status == -1) {
+    while ($status != 0 && $status != -1) {
         try {
             $status = $requestToFssp->requestToGetResults();
             $log->debug("Проход номер {$count}, успешно отработал запрос результата", [$status]);
