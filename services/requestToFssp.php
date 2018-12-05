@@ -60,6 +60,7 @@ class requestToFssp
         $responseArray = json_decode($response, true);
 
         if ($responseArray['code'] == 0) {
+            $this->log->debug("Успешно отправил групповой запрос и получил task {$this->task}");
             $this->task = $responseArray['response']['task'];
         }
         return $responseArray['code'];
