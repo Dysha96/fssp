@@ -4,4 +4,4 @@
 /.idea
 .env
 error.log
-.csv
+*.csv
