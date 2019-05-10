@@ -10,7 +10,9 @@
         "guzzlehttp/guzzle": "~6.0",
         "vlucas/phpdotenv": "^2.5",
         "ext-json": "*",
-        "monolog/monolog": "^1.24"
+        "monolog/monolog": "^1.24",
+        "ext-pdo": "*",
+      "ext-mbstring": "*"
     },
     "autoload": {
         "psr-4": {

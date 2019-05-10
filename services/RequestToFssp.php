@@ -14,7 +14,7 @@ use GuzzleHttp;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
-class requestToFssp
+class RequestToFssp
 {
     private $log;
     private $token;
@@ -26,11 +26,11 @@ class requestToFssp
 
     public function __construct($token)
     {
-        $dirName = dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('LOG');
+        $pathLog = dirname(__DIR__) . DIRECTORY_SEPARATOR . getenv('LOG');
 
         $this->log = new Logger('requestToFssp');
         try {
-            $this->log->pushHandler(new StreamHandler($dirName, Logger::DEBUG));
+            $this->log->pushHandler(new StreamHandler($pathLog, Logger::DEBUG));
         } catch (\Exception $e) {
             exit(-1);
         }
@@ -44,9 +44,15 @@ class requestToFssp
     //делает групповой запрос на поиск информации в БДИП, возврощает код ответа
     function PostSearchGroupTask($customers)
     {
+        if ($this->attempt == $this->maxAttempt) {
+            return -1;
+        }
+
         $this->task = null;
 
-        sleep(3);
+        sleep(3 + $this->attempt);
+        $this->attempt++;
+
         $response = $this->client->post(
             'https://api-ip.fssprus.ru/api/v1.0/search/group',
             [
@@ -62,6 +68,7 @@ class requestToFssp
         if ($responseArray['code'] == 0) {
             $this->log->debug("Успешно отправил групповой запрос и получил task {$this->task}");
             $this->task = $responseArray['response']['task'];
+            $this->attempt = 0;
         }
         return $responseArray['code'];
     }
@@ -70,7 +77,6 @@ class requestToFssp
     function requestToGetSearchPhysicalTask($firstName, $lastName, $birthDate = '', $region = -1, $secondName = '')
     {
         $this->task = null;
-        $this->attempt = 0;
 
         sleep(3);
         $response = $this->client->get(
@@ -91,7 +97,7 @@ class requestToFssp
 
         if ($responseArray['code'] == 0) {
             $this->task = $responseArray['response']['task'];
-            $this->log->debug("Успешно отправил запрос и получил task {$this->task}");
+            $this->log->debug("Успешно отправил запрос и получил task", [$this->task]);
         }
         return $responseArray['code'];
     }
