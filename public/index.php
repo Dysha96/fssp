@@ -109,7 +109,7 @@ foreach ($chunksCustomers as $key => $chunkCustomers) {
         }
     }
 
-    if ($postSearchStatus < 0) {
+    if (is_null($postSearchStatus) || $postSearchStatus < 0) {
 
         $log->debug("Проход номер {$key}, обработка запроса завершилась со статусом {$postSearchStatus},завершение программы");
         foreach ($chunkCustomers as $customer) {
