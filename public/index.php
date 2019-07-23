@@ -97,7 +97,7 @@ foreach ($chunksCustomers as $key => $chunkCustomers) {
         }
     }
 
-    while (empty($postSearchStatus) || $postSearchStatus != 0 && $postSearchStatus != -1) {
+    while ($postSearchStatus != 0 && $postSearchStatus != -1) {
         try {
             $postSearchStatus = $requestToFssp->PostSearchGroupTask($customers);
         } catch (RequestException $e) {
