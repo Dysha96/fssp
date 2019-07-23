@@ -30,12 +30,25 @@ $DB_HOST = getenv('DB_HOST');
 $DB_NAME = getenv('DB_NAME');
 $DB_USERNAME = getenv('DB_USERNAME');
 $DB_PASSWORD = getenv('DB_PASSWORD');
+$TABLE_DATA_FSSP = getenv('TABLE_DATA_FSSP');
+$TABLE_CUSTOMERS = getenv('TABLE_CUSTOMERS');
 
-$sql = 'SELECT * FROM customers where customer_id>3171325';
+$sql = "SELECT * FROM {$TABLE_CUSTOMERS} group by customer_id order by customer_id";
 $pdo = new PDO("mysql:host={$DB_HOST}; dbname={$DB_NAME}; charset=utf8mb4", $DB_USERNAME, $DB_PASSWORD);
 $customers = $pdo->query($sql)->fetchAll();
 
-$sqlInsert = "INSERT INTO data_fssp (customer_id, debt,end_date, article,part,paragraph) VALUES (?,?,?,?,?,?)";
+$sqlInsert = "INSERT INTO {$TABLE_DATA_FSSP} (
+                                customer_id,
+                                debt,end_date,
+                                article, part,
+                                paragraph,
+                                exe_production_number,
+                                exe_production_date,
+                                details,
+                                subject,
+                                department,
+                                bailiff
+                                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
 $dataFsspInsert = $pdo->prepare($sqlInsert);
 
 $limitSearchGroup = 50;
@@ -52,7 +65,7 @@ foreach ($chunksCustomers as $key => $chunkCustomers) {
     $log->debug("Проход номер {$key}");
 
     foreach ($chunkCustomers as $customer) {
-        $region = $customer['region'];
+        $region = $customer['registration_region'];
         $firstName = $customer['first_name'];
         $secondName = $customer['middle_name'];
         $lastName = $customer['last_name'];
@@ -84,7 +97,7 @@ foreach ($chunksCustomers as $key => $chunkCustomers) {
         }
     }
 
-    while ($postSearchStatus != 0 && $postSearchStatus != -1) {
+    while (empty($postSearchStatus) || $postSearchStatus != 0 && $postSearchStatus != -1) {
         try {
             $postSearchStatus = $requestToFssp->PostSearchGroupTask($customers);
         } catch (RequestException $e) {
@@ -172,6 +185,8 @@ foreach ($chunksCustomers as $key => $chunkCustomers) {
             $part = null;
             $paragraph = null;
             $endDate = null;
+            $exeProductionNumber = null;
+            $exeProductionDate = null;
 
             if (!empty($information['ip_end'])) {
                 [$endDate, $article, $part, $paragraph] = explode(', ', $information['ip_end']);
@@ -193,7 +208,25 @@ foreach ($chunksCustomers as $key => $chunkCustomers) {
                 }
             }
 
-            $dataFsspInsert->execute([$customer['customer_id'], $debt, $endDate, $article, $part, $paragraph]);
+            if (!empty($information['exe_production'])) {
+                [$exeProductionNumber, $exeProductionDate] = explode(' от ', $information['exe_production']);
+            }
+            $exeProductionDate = implode('-', array_reverse(explode('.', $exeProductionDate)));
+
+            $dataFsspInsert->execute([
+                $customer['customer_id'],
+                $debt,
+                $endDate,
+                $article,
+                $part,
+                $paragraph,
+                $exeProductionNumber,
+                $exeProductionDate,
+                $information['details'],
+                $information['subject'],
+                $information['department'],
+                $information['bailiff'],
+            ]);
         }
     }
 }

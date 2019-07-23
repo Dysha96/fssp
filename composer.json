@@ -18,6 +18,6 @@
         "psr-4": {
             "services\\": "services/"
         },
-        "files": ["services/requestToFssp.php"]
+        "files": ["services/RequestToFssp.php"]
     }
 }
