@@ -22,7 +22,8 @@ class RequestToFssp
     private $responses;
     private $client;
     private $attempt = 0;
-    private $maxAttempt = 500;
+    private $maxAttemptRequestToGetResults = 500;
+    private $maxAttemptPostSearchGroupTask = 5;
 
     public function __construct($token)
     {
@@ -42,9 +43,9 @@ class RequestToFssp
     }
 
     //делает групповой запрос на поиск информации в БДИП, возврощает код ответа
-    function PostSearchGroupTask($customers)
+    function postSearchGroupTask($customers)
     {
-        if ($this->attempt == $this->maxAttempt) {
+        if ($this->attempt == $this->maxAttemptPostSearchGroupTask) {
             return -1;
         }
 
@@ -123,7 +124,7 @@ class RequestToFssp
     //Получение результатов поданного запроса, возврощает код ответа
     function requestToGetResults()
     {
-        if ($this->attempt == $this->maxAttempt) {
+        if ($this->attempt == $this->maxAttemptRequestToGetResults) {
             return -1;
         }
 
