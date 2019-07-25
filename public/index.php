@@ -5,6 +5,8 @@ use GuzzleHttp\Psr7;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
+CONST TO_MANY_REQUEST = 429;
+
 require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 $start = microtime(true);
 set_time_limit(0);
@@ -87,59 +89,53 @@ foreach ($chunksCustomers as $key => $chunkCustomers) {
 
     $log->debug("Проход номер {$key}, подготовил infoForRequest", [$limitSearchGroup * $key]);
 
-    try {
-        $postSearchStatus = $requestToFssp->PostSearchGroupTask($infoForRequest);
-    } catch (RequestException $e) {
-        $log->warning("Проход номер {$key}, ошибка при отправке групового запроса");
-        $log->warning(nl2br(Psr7\str($e->getRequest())));
-        if ($e->hasResponse()) {
-            $log->warning(nl2br(Psr7\str($e->getResponse())));
-        }
-    }
+    $postSearchStatus = 1;
 
-    while ($postSearchStatus != 0 && $postSearchStatus != -1) {
+    while ($postSearchStatus > 0) {
         try {
-            $postSearchStatus = $requestToFssp->PostSearchGroupTask($customers);
+            $postSearchStatus = $requestToFssp->PostSearchGroupTask($infoForRequest);
         } catch (RequestException $e) {
-            $log->warning("Проход номер {$key}, снова ошибка при отправке групового запроса");
+            $log->warning("Проход номер {$key}, ошибка при отправке групового запроса");
             $log->warning(nl2br(Psr7\str($e->getRequest())));
             if ($e->hasResponse()) {
                 $log->warning(nl2br(Psr7\str($e->getResponse())));
+                if ($e->getResponse()->getStatusCode() == TO_MANY_REQUEST) {
+                    sleep(60);
+                } else {
+                    $postSearchStatus = -$e->getResponse()->getStatusCode();
+                }
+            } else {
+                $postSearchStatus = -2;
             }
         }
     }
 
     if (is_null($postSearchStatus) || $postSearchStatus < 0) {
-
         $log->debug("Проход номер {$key}, обработка запроса завершилась со статусом {$postSearchStatus},завершение программы");
         foreach ($chunkCustomers as $customer) {
             $outError->fputcsv([$customer['customer_id']]);
         }
-        exit(429);
+        exit(TO_MANY_REQUEST);
     }
 
-    try {
-        $requestToGetStatus = $requestToFssp->requestToGetResults();
-        $log->debug("Проход номер {$key}, успешно отработал запрос результата", [$requestToGetStatus]);
-    } catch (RequestException $e) {
-        $log->warning("Проход номер {$key}, ошибка при получении результата");
-        $requestToGetStatus = -1;
-        $log->warning(nl2br(Psr7\str($e->getRequest())));
-        if ($e->hasResponse()) {
-            $log->warning(nl2br(Psr7\str($e->getResponse())));
-        }
-    }
+    $requestToGetStatus = 2;
 
-    while ($requestToGetStatus != 0 && $requestToGetStatus != -1) {
+    while ($requestToGetStatus > 0) {
         try {
             $requestToGetStatus = $requestToFssp->requestToGetResults();
             $log->debug("Проход номер {$key}, успешно отработал запрос результата", [$requestToGetStatus]);
         } catch (RequestException $e) {
             $log->warning("Проход номер {$key}, ошибка при получении результата");
-            $requestToGetStatus = -1;
             $log->warning(nl2br(Psr7\str($e->getRequest())));
             if ($e->hasResponse()) {
                 $log->warning(nl2br(Psr7\str($e->getResponse())));
+                if ($e->getResponse()->getStatusCode() == TO_MANY_REQUEST) {
+                    sleep(60);
+                } else {
+                    $requestToGetStatus = -$e->getResponse()->getStatusCode();
+                }
+            } else {
+                $requestToGetStatus = -2;
             }
         }
     }
