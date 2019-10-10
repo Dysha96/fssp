@@ -35,7 +35,13 @@ $DB_PASSWORD = getenv('DB_PASSWORD');
 $TABLE_DATA_FSSP = getenv('TABLE_DATA_FSSP');
 $TABLE_CUSTOMERS = getenv('TABLE_CUSTOMERS');
 
-$sql = "SELECT * FROM {$TABLE_CUSTOMERS} group by customer_id order by customer_id";
+$sql = "SELECT *
+            FROM {$TABLE_CUSTOMERS}
+            where customer_id > (select max({$TABLE_DATA_FSSP}.customer_id)
+                                 from {$TABLE_DATA_FSSP}
+                                        join {$TABLE_CUSTOMERS} on {$TABLE_CUSTOMERS}.customer_id = {$TABLE_DATA_FSSP}.customer_id)
+            group by customer_id
+            order by customer_id";
 $pdo = new PDO("mysql:host={$DB_HOST}; dbname={$DB_NAME}; charset=utf8mb4", $DB_USERNAME, $DB_PASSWORD);
 $customers = $pdo->query($sql)->fetchAll();
 
@@ -51,7 +57,6 @@ $sqlInsert = "INSERT INTO {$TABLE_DATA_FSSP} (
                                 department,
                                 bailiff
                                 ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
-$dataFsspInsert = $pdo->prepare($sqlInsert);
 
 $limitSearchGroup = 50;
 $type = 1;
@@ -100,7 +105,7 @@ foreach ($chunksCustomers as $key => $chunkCustomers) {
             if ($e->hasResponse()) {
                 $log->warning(nl2br(Psr7\str($e->getResponse())));
                 if ($e->getResponse()->getStatusCode() == TO_MANY_REQUEST) {
-                    sleep(60);
+                    sleep(15);
                 } else {
                     $postSearchStatus = -$e->getResponse()->getStatusCode();
                 }
@@ -115,7 +120,7 @@ foreach ($chunksCustomers as $key => $chunkCustomers) {
         foreach ($chunkCustomers as $customer) {
             $outError->fputcsv([$customer['customer_id']]);
         }
-        exit(TO_MANY_REQUEST);
+        exit($postSearchStatus);
     }
 
     $requestToGetStatus = 2;
@@ -130,7 +135,7 @@ foreach ($chunksCustomers as $key => $chunkCustomers) {
             if ($e->hasResponse()) {
                 $log->warning(nl2br(Psr7\str($e->getResponse())));
                 if ($e->getResponse()->getStatusCode() == TO_MANY_REQUEST) {
-                    sleep(60);
+                    sleep(15);
                 } else {
                     $requestToGetStatus = -$e->getResponse()->getStatusCode();
                 }
@@ -146,8 +151,11 @@ foreach ($chunksCustomers as $key => $chunkCustomers) {
         foreach ($chunkCustomers as $customer) {
             $outError->fputcsv([$customer['customer_id']]);
         }
-        exit(429);
+        exit($requestToGetStatus);
     }
+
+    $pdo = new PDO("mysql:host={$DB_HOST}; dbname={$DB_NAME}; charset=utf8mb4", $DB_USERNAME, $DB_PASSWORD);
+    $dataFsspInsert = $pdo->prepare($sqlInsert);
 
     foreach ($chunkCustomers as $id => $customer) {
         $result = $requestToFssp->getResultById($id);
