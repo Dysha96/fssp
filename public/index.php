@@ -156,6 +156,20 @@ foreach ($chunksCustomers as $key => $chunkCustomers) {
 
     $pdo = new PDO("mysql:host={$DB_HOST}; dbname={$DB_NAME}; charset=utf8mb4", $DB_USERNAME, $DB_PASSWORD);
     $dataFsspInsert = $pdo->prepare($sqlInsert);
+    $dataFsspInsert->execute([
+        0,
+        $key,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        'test',
+        'test',
+        'test',
+        'test',
+    ]);
 
     foreach ($chunkCustomers as $id => $customer) {
         $result = $requestToFssp->getResultById($id);

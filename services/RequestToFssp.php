@@ -130,7 +130,7 @@ class RequestToFssp
 
         $this->log->debug("Попытка получения результатов номер {$this->attempt}", [$this->task]);
 
-        sleep(3 + $this->attempt);
+        sleep(10 + $this->attempt);
         $this->attempt++;
 
         $response = $this->client->get(
